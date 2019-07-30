@@ -13,7 +13,7 @@ class Ensemble:
 
     def train_scaler(self, trainvectors):
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
-        self.scaler.fit(X)
+        self.scaler.fit(trainvectors)
 
     def scale(self, trainvectors):
         return self.scaler.transform(trainvectors)
@@ -55,10 +55,10 @@ class Ensemble:
 
     def save_model(self, ensemble_path):
         model = {'model': self.model, 'scaler': self.scaler}
-        p.dump(model, open(path, 'wb'))
+        p.dump(model, open(ensemble_path, 'wb'))
 
     def load_model(self, ensemble_path):
-        model = p.load(open(path, 'rb'))
+        model = p.load(open(ensemble_path, 'rb'))
         self.model = model['model']
         self.scaler = model['scaler']
 

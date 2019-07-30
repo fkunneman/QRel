@@ -1,6 +1,7 @@
 
 import os
 import json
+import numpy as np
 
 from qrel.classes import question, gv_bm25, trlm, softcosine, ensemble
 
@@ -20,8 +21,8 @@ class QSim:
 
     def id2question(self):
         id2q = {}
-        for q in self.questions:
-            id2q[q.id] = q
+        for i,q in enumerate(self.questions):
+            id2q[q.id] = i
         return id2q
 
     def add_question(self,qdict):
@@ -43,7 +44,7 @@ class QSim:
             self.gv_bm25.save_model(modelpath)
 
     def init_trlm(self,modelpath):
-        self.trlm = trlm.TRLM(self.embeddings,self.d)
+        self.trlm = trlm.TRLM(self.d)
         if os.path.exists(modelpath):
             self.trlm.load_model(modelpath)
         else:
@@ -53,7 +54,7 @@ class QSim:
             self.trlm.save_model(modelpath)
 
     def init_softcosine(self):
-        self.softcosine = softcosine.SoftCosine(self.embeddings,self.d,self.tfidf)
+        self.softcosine = softcosine.SoftCosine(self.d,self.tfidf)
 
     def init_ensemble(self,ensemblepath,traindatapath):
         self.ensemble = ensemble.Ensemble()
@@ -70,21 +71,24 @@ class QSim:
     def return_scores(self,question1,question2):
         bm25score = self.gv_bm25.return_score(question1, self.id2q[question2.id])
         translation = self.trlm.apply_model(question1, question2)
-        softcosine = self.softcosine.apply_model(question1, question2)     
-        return [bm25score,translation,softcosine]
+        softcosine = self.softcosine.apply_model(question1, question2)
+        if not np.isnan(softcosine):
+            return [bm25score,translation,softcosine]
+        else:
+            return False
 
     def train_model(self,traindata):
         trainvectors, labels = [], []
         for q1id in traindata:
-            try:
-                q1 = self.questions[self.id2q[q1id]]
-                q1.encode(self.w2v)
-            except KeyError:
-                print('Question 1 with id',q1id,'not in data, adding...')
-                qdict = {'id':q1id,'questiontext':' '.join(traindata[q1id][q2id]['q1']),'tokens':traindata[q1id][q2id]['q1']}
-                self.add_question(qdict)
-                q1 = self.questions[self.id2q[q1id]]
             for q2id in traindata[q1id]:
+                try:
+                    q1 = self.questions[self.id2q[q1id]]
+                    q1.encode(self.w2v)
+                except KeyError:
+                    print('Question 1 with id',q1id,'not in data, adding...')
+                    qdict = {'id':q1id,'questiontext':' '.join(traindata[q1id][q2id]['q1']),'tokens':traindata[q1id][q2id]['q1']}
+                    self.add_question(qdict)
+                    q1 = self.questions[self.id2q[q1id]]
                 try:
                     q2 = self.questions[self.id2q[q2id]]
                     q2.encode(self.w2v)
@@ -95,8 +99,12 @@ class QSim:
                     q2 = self.questions[self.id2q[q2id]]
                 label = traindata[q1id][q2id]['label']
 
-                trainvectors.append(self.return_scores(q1,q2))
-                labels.append(label)
+                scores = self.return_scores(q1,q2)
+                if scores:
+                    trainvectors.append(scores)
+                    labels.append(label)
+                else:
+                    continue
 
         self.ensemble.train_regression(trainvectors=trainvectors, labels=labels, c='search', penalty='search', tol='search', gridsearch='brutal', jobs=10)
 

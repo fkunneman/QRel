@@ -6,8 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class TRLM:
 
-    def __init__(self,w2v,d):
-        self.w2v = w2v
+    def __init__(self,d):
         self.dict = d
         self.alpha = False
         self.sigma = False
@@ -41,7 +40,7 @@ class TRLM:
         self.sigma = translation['sigma']
         self.prob_w_C = translation['w_Q']
 
-    def apply_model(self,q1,q1emb,q2,q2emb):
+    def apply_model(self,q1,q2):
        
         score = 0.0
         if len(q1.tokens) == 0 or len(q2.tokens) == 0: return 0.0
@@ -64,7 +63,7 @@ class TRLM:
             mx_w_Q = 0.0
 
             for j, t in enumerate(q2.tokens):
-                w_t = max(0, cosine_similarity([q1emb], [q2emb])[0][0]) ** 2
+                w_t = max(0, cosine_similarity([q1.emb[i]], [q2.emb[j]])[0][0]) ** 2
 
                 t_Q = t_Qs[j]
                 mx_w_Q += (w_t * t_Q)
