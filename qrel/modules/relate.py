@@ -48,7 +48,7 @@ if not questions[0].tokens:
 
 # initialize qsim
 d = Dictionary.load(dictpath)
-word2vec = Word2Vec.load(w2v_path)
+word2vec = Word2Vec.load(w2vpath)
 tfidf = TfidfModel.load(tfidfpath)
 qs = qsim.QSim(questions,d,tfidf,word2vec)
 print('Initializing BM25')
@@ -68,7 +68,9 @@ print('Seed question:',questions[0].questiontext.encode('utf-8'))
 print('Candidates BM25:','---'.join([x.questiontext for x in candidates]).encode('utf-8'))
 print('Reranked TRLM:','---'.join([x[0].questiontext for x in candidates_reranked_trlm]).encode('utf-8'))
 print('Reranked SoftCosine:','---'.join([x[0].questiontext for x in candidates_reranked_softcosine]).encode('utf-8'))
-print('Reranked Ensemble','---'.join(['**'.join([x[0].questiontext,str(x[1]),str(x[2])]) for x in qs.candidates_reranked_ensemble]).encode('utf-8'))
+print('Reranked Ensemble','---'.join(['**'.join([x[0].questiontext,str(x[1]),str(x[2])]) for x in candidates_reranked_ensemble]).encode('utf-8'))
+
+quit()
 
 # initialize topics
 topex = topic_extractor.TopicExtractor(commonness_path,ngram_entropy_path)
