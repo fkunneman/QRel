@@ -9,7 +9,7 @@ class SoftCosine:
         self.dict = d
         self.tfidf = tfidf
 
-    def apply_model(self,q1,q2):
+    def apply_model(self,q1,q1emb,q2,q2emb):
 
         def dot(q1tfidf, q1emb, q2tfidf, q2emb):
             cos = 0.0
@@ -18,12 +18,9 @@ class SoftCosine:
                     if w1[0] == w2[0]:
                         cos += (w1[1] * w2[1])
                     else:
-                        m_ij = max(0, cosine_similarity(q1emb.getrow(i).toarray().tolist(), q2emb.getrow(j).toarray().tolist())[0][0])**2
+                        m_ij = max(0, cosine_similarity([q1emb], [q2emb])[0][0])**2
                         cos += (w1[1] * m_ij * w2[1])
             return cos
-
-        q1emb = self.embeddings[q1.emb[0]:q1.emb[0]+q1.emb[1]]
-        q2emb = self.embeddings[q2.emb[0]:q2.emb[0]+q2.emb[1]]
 
         q1tfidf = self.tfidf[self.dict.doc2bow(q1.tokens)]
         q2tfidf = self.tfidf[self.dict.doc2bow(q2.tokens)]

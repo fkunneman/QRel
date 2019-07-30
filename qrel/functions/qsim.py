@@ -6,37 +6,31 @@ from qrel.classes import question, gv_bm25, trlm, softcosine, ensemble
 
 class QSim:
 
-    def __init__(self,questions,embeddings,d,tfidf,qprep,w2vpath):
+    def __init__(self,questions,d,tfidf,w2v):
         self.questions = questions
-        self.embeddings = embeddings
-        self.id2q = self.id2question_index()
+        self.id2q = self.id2question()
         self.d = d
         self.tfidf = tfidf
-        self.qprep = qprep
-        self.w2vpath = w2vpath
+        self.w2v = w2v
         self.model = False
         self.gv_bm25 = False
         self.trlm = False
         self.softcosine = False
         self.ensemble = False
 
-    def id2question_index(self):
+    def id2question(self):
         id2q = {}
-        for i,q in enumerate(self.questions):
-            id2q[q.id] = i
+        for q in self.questions:
+            id2q[q.id] = q
         return id2q
 
     def add_question(self,qdict):
         q = question.Question()
         q.import_qdict(qdict)
+        q.encode(self.w2v)
         self.questions.append(q)
         self.id2q[q.id] = len(self.questions)-1
         self.gv_bm25.init_model([q.tokens for q in self.questions])
-        new_embeddings, q_emb = self.qprep.add_question(self.embeddings,q,self.w2vpath)
-        self.embeddings = new_embeddings
-        self.trlm.embeddings = new_embeddings
-        self.softcosine.embeddings = new_embeddings
-        q.set_emb(q_emb)
 
     def init_bm25(self,modelpath):
         self.gv_bm25 = gv_bm25.GV_BM25()
@@ -82,16 +76,18 @@ class QSim:
     def train_model(self,traindata):
         trainvectors, labels = [], []
         for q1id in traindata:
+            try:
+                q1 = self.questions[self.id2q[q1id]]
+                q1.encode(self.w2v)
+            except KeyError:
+                print('Question 1 with id',q1id,'not in data, adding...')
+                qdict = {'id':q1id,'questiontext':' '.join(traindata[q1id][q2id]['q1']),'tokens':traindata[q1id][q2id]['q1']}
+                self.add_question(qdict)
+                q1 = self.questions[self.id2q[q1id]]
             for q2id in traindata[q1id]:
                 try:
-                    q1 = self.questions[self.id2q[q1id]]
-                except KeyError:
-                    print('Question 1 with id',q1id,'not in data, adding...')
-                    qdict = {'id':q1id,'questiontext':' '.join(traindata[q1id][q2id]['q1']),'tokens':traindata[q1id][q2id]['q1']}
-                    self.add_question(qdict)
-                    q1 = self.questions[self.id2q[q1id]]
-                try:
                     q2 = self.questions[self.id2q[q2id]]
+                    q2.encode(self.w2v)
                 except KeyError:
                     print('Question 2 with id',q2id,'not in data, adding...')
                     qdict = {'id':q2id,'questiontext':' '.join(traindata[q1id][q2id]['q2']),'tokens':traindata[q1id][q2id]['q1']}
@@ -99,8 +95,6 @@ class QSim:
                     q2 = self.questions[self.id2q[q2id]]
                 label = traindata[q1id][q2id]['label']
 
-                print('Embeddings shape',self.embeddings.shape)
-                print('Q1 TOKENS',' '.join(q1.tokens).encode('utf-8'),'Q1 EMB',q1.emb,'Q2 TOKENS',' '.join(q2.tokens).encode('utf-8'),'Q2 EMB',q2.emb)
                 trainvectors.append(self.return_scores(q1,q2))
                 labels.append(label)
 
@@ -120,15 +114,17 @@ class QSim:
         if approach == 'bm25':
             for candidate in candidates:
                 candidate_score.append([candidate,self.bm25.return_score(q,candidate)])
-        if approach == 'trlm':
-            for candidate in candidates:
-                candidate_score.append([candidate,self.trlm.apply_model(q,candidate)])
-        elif approach == 'softcosine':
-            for candidate in candidates:
-                candidate_score.append([candidate,self.softcosine.apply_model(q,candidate)])
-        elif approach == 'ensemble':
-            for candidate in candidates:
-                candidate_score.append([candidate] + self.qsim(q,candidate))
+        else:
+            q.encode(self.w2v)
+            [c.encode(self.w2v) for c in candidates]
+            if approach == 'trlm':
+                for candidate in candidates:
+                    candidate_score.append([candidate,self.trlm.apply_model(q,candidate)])
+            elif approach == 'softcosine':
+                for candidate in candidates:
+                    candidate_score.append([candidate,self.softcosine.apply_model(q,candidate)])
+            elif approach == 'ensemble':
+                for candidate in candidates:
+                    candidate_score.append([candidate] + self.qsim(q,candidate))
         return sorted(candidate_score,key = lambda k : k[1],reverse = True)
-
 

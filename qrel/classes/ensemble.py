@@ -1,9 +1,9 @@
 
-import json
-import pandas as pd
-import numpy as np
 import _pickle as p
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import MinMaxScaler
 
 class Ensemble:
 
