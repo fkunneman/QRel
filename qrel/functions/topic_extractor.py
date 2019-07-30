@@ -3,8 +3,8 @@ import copy
 import pickle
 import numpy
 
-from dte.functions import entity_extractor
-from dte.classes import commonness
+from qrel.functions import entity_extractor
+from qrel.classes import commonness
 
 class TopicExtractor:
 
