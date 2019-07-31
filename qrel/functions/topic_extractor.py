@@ -19,8 +19,8 @@ class TopicExtractor:
         with open(ngram_commonness,'r',encoding='utf-8') as file_in:
             lines = file_in.read().strip().split('\n')
             for line in lines:
-                tokens = line.split()
-                entity = ' '.join(tokens[:-1])
+                tokens = line.split('\t')
+                entity = tokens[0]
                 self.cs[entity] = float(tokens[-1])
         self.commonness_set = set(self.cs.keys())
 
@@ -54,12 +54,15 @@ class TopicExtractor:
                     continue
                 try:
                     pos = self.match_index(entity,question.lemmas,question.pos)
+                    print(entity.encode('utf-8'),pos)
                     if not pos in ['DET','PRON','ADP','ADV','CCONJ','SCONJ']:
                         filtered.append(entity)
+                    else:
+                        print('FILTERED')
                 except:
                     print('COULD NOT FIND INDEX FOR',entity.encode('utf-8'),'in',' '.join(question.lemmas).encode('utf-8'))
                     continue
-       return filtered
+        return filtered
 
     def rerank_topics(self,topics_commonness,topics_entropy):
         topics_commonness_txt = [x[0] for x in topics_commonness]

@@ -39,4 +39,4 @@ class Question:
             if not token.pos_ == 'PUNCT':
                 self.tokens.append(token.text.lower())
                 self.lemmas.append(token.lemma_)
-                self.pos.append(token.pos)
+                self.pos.append(token.pos_)
