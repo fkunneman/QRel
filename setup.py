@@ -35,5 +35,5 @@ setup(
     include_package_data=True,
     package_data = {'': ['*.wsgi','*.js','*.xsl','*.gif','*.png','*.xml','*.html','*.jpg','*.svg','*.rng'] },
     setup_requires=['setuptools>=28.5.0'],
-    install_requires=['gensim','numpy','sklearn','nltk'],
+    install_requires=['gensim','numpy','sklearn','nltk','spacy'],
 )

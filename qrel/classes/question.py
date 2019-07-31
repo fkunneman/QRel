@@ -8,6 +8,7 @@ class Question:
         self.id = False
         self.questiontext = False
         self.tokens = False
+        self.lemmas = False
         self.topics = False
         self.emb = []
 
@@ -31,7 +32,7 @@ class Question:
 
     def stem(self):
         stemmer = SnowballStemmer("dutch")
-        lemmas = [stemmer.stem(token) for token in self.tokens]
+        self.lemmas = [stemmer.stem(token) for token in self.tokens]
 
     def encode(self,w2v):
 

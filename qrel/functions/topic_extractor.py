@@ -6,7 +6,7 @@ class TopicExtractor:
 
     def __init__(self,ngram_commonness,ngram_entropy):
         print('Initializing commonness')
-        self.set_commonness(commonness_dir)
+        self.set_commonness(ngram_commonness)
         print('Initializing entropy')
         self.set_entropy(ngram_entropy)
 
@@ -22,8 +22,8 @@ class TopicExtractor:
                 tokens = line.split()
                 entity = ' '.join(tokens[:-1])
                 self.cs[entity] = float(tokens[-1])
-        self.commonness_set = set(self.entropy.keys())
-        
+        self.commonness_set = set(self.cs.keys())
+
     def set_entropy(self,ngram_entropy):
         self.entropy = {}
         with open(ngram_entropy,'r',encoding='utf-8') as file_in:
@@ -41,7 +41,7 @@ class TopicExtractor:
     def match_index(self,token,sequence1,sequence2):
         index = sequence1.index(token)
         return sequence2[index]
-  
+
     def rerank_topics(self,topics_commonness,topics_entropy):
         topics_commonness_txt = [x[0] for x in topics_commonness]
         topics_entropy_txt = [x[0] for x in topics_entropy]
@@ -99,10 +99,10 @@ class TopicExtractor:
                 if not len(startindices) == 1:
                     print("No single start index for",topic.encode('utf-8'),' '.join([x[0] for x in question.lemmas]).encode('utf-8'),"startindex",startindices)
                 index = startindices[0] - len(tokens)
-                text = ' '.join(text_sequence[startindices[0]-1:startindices[0]+(len(tokens)-1)])
+                text = ' '.join(question.tokens[startindices[0]-1:startindices[0]+(len(tokens)-1)])
             else:
                 entity = tokens[0]
-                text = text_sequence[question.lemmas.index(entity)]
+                text = question.tokens[question.lemmas.index(entity)]
             topics_text.append(text)
         return topics_text
     
@@ -111,13 +111,15 @@ class TopicExtractor:
     ###############
 
     def extract(self,question,max_topics=5):
-        topics_commonness = [[e,self.cs[e]] for e in self.filter_entities(list(set(question.lemmas) & self.commonness_set),question)]
-        topics_entropy = [[e,self.entropy[e]] for e in self.filter_entities(list(set(question.lemmas) & self.entropy_set),question)] 
+#        topics_commonness = [[e,self.cs[e]] for e in self.filter_entities(list(set(question.lemmas) & self.commonness_set),question)]
+#        topics_entropy = [[e,self.entropy[e]] for e in self.filter_entities(list(set(question.lemmas) & self.entropy_set),question)]
+        topics_commonness = [[e,self.cs[e]] for e in list(set(question.lemmas) & self.commonness_set)]
+        topics_entropy = [[e,self.entropy[e]] for e in list(set(question.lemmas) & self.entropy_set)]
         topics_ranked = self.rerank_topics(topics_commonness,topics_entropy)
         topics_text = self.topic2text([x[0] for x in topics_ranked],question)
-        topics_filtered_text = [tf + [topics_text[i]] for i,tf in enumerate(topics_filtered)]
-        topics_filtered_text_dict = [{'topic':x[0],'topic_score':x[1],'topic_entropy':x[2],'topic_commonness':x[3],'topic_text':x[4]} for x in topics_filtered_text]
-        return topics_filtered_text_dict
+        topics_ranked_text = [tf + [topics_text[i]] for i,tf in enumerate(topics_ranked)]
+        topics_ranked_text_dict = [{'topic':x[0],'topic_score':x[1],'topic_entropy':x[2],'topic_commonness':x[3],'topic_text':x[4]} for x in topics_ranked_text]
+        return topics_ranked_text_dict
 
     def extract_list(self,questions,max_topics=5):
         return [self.extract(q,max_topics) for q in questions]
