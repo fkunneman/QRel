@@ -42,6 +42,25 @@ class TopicExtractor:
         index = sequence1.index(token)
         return sequence2[index]
 
+    def filter_entities(self,entities,question):
+        filtered = []
+        for entity in entities:
+            tokens = entity.split()
+            if len(tokens) > 1:
+                filtered.append(entity)
+            else:
+                entity = tokens[0]
+                if len(entity) <= 1:
+                    continue
+                try:
+                    pos = self.match_index(entity,question.lemmas,question.pos)
+                    if not pos in ['DET','PRON','ADP','ADV','CCONJ','SCONJ']:
+                        filtered.append(entity)
+                except:
+                    print('COULD NOT FIND INDEX FOR',entity.encode('utf-8'),'in',' '.join(question.lemmas).encode('utf-8'))
+                    continue
+       return filtered
+
     def rerank_topics(self,topics_commonness,topics_entropy):
         topics_commonness_txt = [x[0] for x in topics_commonness]
         topics_entropy_txt = [x[0] for x in topics_entropy]
@@ -111,15 +130,14 @@ class TopicExtractor:
     ###############
 
     def extract(self,question,max_topics=5):
-#        topics_commonness = [[e,self.cs[e]] for e in self.filter_entities(list(set(question.lemmas) & self.commonness_set),question)]
-#        topics_entropy = [[e,self.entropy[e]] for e in self.filter_entities(list(set(question.lemmas) & self.entropy_set),question)]
-        topics_commonness = [[e,self.cs[e]] for e in list(set(question.lemmas) & self.commonness_set)]
-        topics_entropy = [[e,self.entropy[e]] for e in list(set(question.lemmas) & self.entropy_set)]
+        topics_commonness = [[e,self.cs[e]] for e in self.filter_entities(list(set(question.lemmas) & self.commonness_set),question)]
+        topics_entropy = [[e,self.entropy[e]] for e in self.filter_entities(list(set(question.lemmas) & self.entropy_set),question)]
         topics_ranked = self.rerank_topics(topics_commonness,topics_entropy)
-        topics_text = self.topic2text([x[0] for x in topics_ranked],question)
-        topics_ranked_text = [tf + [topics_text[i]] for i,tf in enumerate(topics_ranked)]
-        topics_ranked_text_dict = [{'topic':x[0],'topic_score':x[1],'topic_entropy':x[2],'topic_commonness':x[3],'topic_text':x[4]} for x in topics_ranked_text]
-        return topics_ranked_text_dict
+        topics_filtered = self.reduce_overlap(topics_ranked)[:max_topics]
+        topics_text = self.topic2text([x[0] for x in topics_filtered],question)
+        topics_filtered_text = [tf + [topics_text[i]] for i,tf in enumerate(topics_filtered)]
+        topics_filtered_text_dict = [{'topic':x[0],'topic_score':x[1],'topic_entropy':x[2],'topic_commonness':x[3],'topic_text':x[4]} for x in topics_filtered_text]
+        return topics_filtered_text_dict
 
     def extract_list(self,questions,max_topics=5):
         return [self.extract(q,max_topics) for q in questions]

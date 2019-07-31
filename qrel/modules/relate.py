@@ -40,7 +40,7 @@ else:
 # prepare questions
 if not questions[0].tokens:
     for q in questions:
-        q.tokenize()
+        q.preprocess()
     questions_formatted = [q.return_qdict() for q in qp.questions]
     with open(questionspath,'w',encoding='utf-8') as file_out:
         json.dump(questions_formatted,file_out)
