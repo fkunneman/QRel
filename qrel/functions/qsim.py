@@ -86,7 +86,7 @@ class QSim:
                     q1.encode(self.w2v)
                 except KeyError:
                     print('Question 1 with id',q1id,'not in data, adding...')
-                    qdict = {'id':q1id,'questiontext':' '.join(traindata[q1id][q2id]['q1']),'tokens':traindata[q1id][q2id]['q1']}
+                    qdict = {'id':q1id,'questiontext':' '.join(traindata[q1id][q2id]['q1']),'tokens':[w.lower() for w in traindata[q1id][q2id]['q1']]}
                     self.add_question(qdict)
                     q1 = self.questions[self.id2q[q1id]]
                 try:
@@ -94,7 +94,7 @@ class QSim:
                     q2.encode(self.w2v)
                 except KeyError:
                     print('Question 2 with id',q2id,'not in data, adding...')
-                    qdict = {'id':q2id,'questiontext':' '.join(traindata[q1id][q2id]['q2']),'tokens':traindata[q1id][q2id]['q1']}
+                    qdict = {'id':q2id,'questiontext':' '.join(traindata[q1id][q2id]['q2']),'tokens':[w.lower() for w in traindata[q1id][q2id]['q1']]}
                     self.add_question(qdict)
                     q2 = self.questions[self.id2q[q2id]]
                 label = traindata[q1id][q2id]['label']

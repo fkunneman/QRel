@@ -43,3 +43,10 @@ class Question:
                 self.tokens.append(token.text.lower())
                 self.lemmas.append(token.lemma_)
                 self.pos.append(token.pos_)
+
+    def encode(self,word2vec):
+        for w in question.tokens:
+            try:
+                emb.append(word2vec[w])
+            except:
+                emb.append(300 * [0])

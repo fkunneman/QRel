@@ -7,7 +7,7 @@ from gensim.corpora import Dictionary
 from gensim.models import TfidfModel, Word2Vec
 
 from qrel.classes import question
-from qrel.functions import qprep, qsim, topic_extractor
+from qrel.functions import qsim, topic_extractor
 
 script_dir = os.path.dirname(__file__)
 questionspath = script_dir + '/../../data/questions.json'
@@ -38,12 +38,13 @@ else:
     quit()
 
 # prepare questions
-if not questions[0].tokens:
+if not questions[0].lemmas:
+    print('Preprocessing questions')
     for q in questions:
         q.preprocess()
-    questions_formatted = [q.return_qdict() for q in qp.questions]
+    questions_preprocessed = [q.return_qdict() for q in questions]
     with open(questionspath,'w',encoding='utf-8') as file_out:
-        json.dump(questions_formatted,file_out)
+        json.dump(questions_preprocessed,file_out)
 
 # initialize qsim
 d = Dictionary.load(dictpath)
