@@ -1,5 +1,5 @@
 
-import pickle
+import pickle5 as p
 
 from gensim.summarization import bm25
 
@@ -10,7 +10,7 @@ class GV_BM25:
 
     def load_model(self,modelpath):
         with open(modelpath,'rb') as input_file:
-            self.model = pickle.load(input_file)
+            self.model = p.load(input_file)
 
     def init_model(self,questions):
         self.model = bm25.BM25(questions)
@@ -20,7 +20,7 @@ class GV_BM25:
 
     def save_model(self,modelpath):
         with open(modelpath, 'wb') as fid:
-            pickle.dump(self.model, fid)
+            p.dump(self.model, fid)
     
     def return_scores(self,question):
         return self.model.get_scores(question)

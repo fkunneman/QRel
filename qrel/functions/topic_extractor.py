@@ -1,6 +1,5 @@
 
 import copy
-import pickle
 import numpy
 
 from qrel.functions import entity_extractor
@@ -36,9 +35,6 @@ class TopicExtractor:
     ###############
     ### HELPERS ###
     ###############
-
-    def extract_sequence(self,question,wordtype):
-        return sum([[word[wordtype] for word in sentence] for sentence in question],[])
 
     def match_index(self,token,sequence1,sequence2):
         index = sequence1.index(token)
@@ -151,7 +147,7 @@ class TopicExtractor:
     def extract_commonness(self,question):
         ee = entity_extractor.EntityExtractor()
         ee.set_commonness(self.cs)
-        ee.extract_entities(self.extract_sequence(question,'lemma'))
+        ee.extract_entities(question.lemmas)
         ee.filter_entities_threshold(0.01)
         entities = self.set_ceiling(ee.entities,1.0)
         entity_value = dict(entities)

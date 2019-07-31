@@ -25,7 +25,7 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Text Processing :: Linguistic",
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
         "Operating System :: POSIX",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -34,5 +34,6 @@ setup(
     zip_safe=False,
     #include_package_data=True,
     #package_data = {'': ['*.wsgi','*.js','*.xsl','*.gif','*.png','*.xml','*.html','*.jpg','*.svg','*.rng'] },
-    install_requires=['gensim','numpy','nltk','pandas'],
+    setup_requires=['setuptools>=18.0','cython'],
+    install_requires=['gensim','numpy','colibricore==2.4','sklearn','nltk','pickle5'],
 )

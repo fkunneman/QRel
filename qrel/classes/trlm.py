@@ -1,6 +1,5 @@
 
 import json
-import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -45,12 +44,11 @@ class TRLM:
         score = 0.0
         if len(q1.tokens) == 0 or len(q2.tokens) == 0: return 0.0
 
-        Q = pd.Series(q2.tokens)
-        Q_count = Q.count()
+        Q_count = len(q2.tokens)
 
         t_Qs = []
         for t in q2.tokens:
-            t_Q = float(Q[Q == t].count()) / Q_count
+            t_Q = float(q2.tokens.count(t)) / Q_count
             t_Qs.append(t_Q)
 
         for i, w in enumerate(q1.tokens):

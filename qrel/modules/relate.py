@@ -3,7 +3,6 @@ import os
 import json
 
 import numpy
-from scipy import sparse
 from gensim.corpora import Dictionary
 from gensim.models import TfidfModel, Word2Vec
 
