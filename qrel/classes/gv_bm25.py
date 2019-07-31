@@ -1,5 +1,5 @@
 
-import pickle5 as p
+import pickle as p
 
 from gensim.summarization import bm25
 
