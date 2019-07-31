@@ -32,8 +32,8 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
     zip_safe=False,
-    #include_package_data=True,
-    #package_data = {'': ['*.wsgi','*.js','*.xsl','*.gif','*.png','*.xml','*.html','*.jpg','*.svg','*.rng'] },
-    setup_requires=['setuptools>=18.0','cython'],
-    install_requires=['gensim','numpy','colibricore==2.4','sklearn','nltk','pickle5'],
+    include_package_data=True,
+    package_data = {'': ['*.wsgi','*.js','*.xsl','*.gif','*.png','*.xml','*.html','*.jpg','*.svg','*.rng'] },
+    setup_requires=['setuptools>=28.5.0'],
+    install_requires=['gensim','numpy','sklearn','nltk'],
 )
