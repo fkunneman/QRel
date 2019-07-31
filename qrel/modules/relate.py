@@ -18,8 +18,8 @@ tfidfpath = script_dir + '/../../data/tfidf.model'
 bm25path = script_dir + '/../../data/bm25.pkl'
 trlmpath = script_dir + '/../../data/trlm.json'
 ensemblepath = script_dir + '/../../data/ensemble.pkl'
-commonness_path = script_dir + '/../../data/wikiparse_19/'
-ngram_entropy_path = script_dir + '/../../data/'
+commonness_path = script_dir + '/../../data/commonness_ngrams.txt'
+entropy_path = script_dir + '/../../data/entropy_ngrams.txt'
 
 # read in questions
 if os.path.exists(questionspath):
@@ -69,10 +69,17 @@ print('Reranked TRLM:','---'.join([x[0].questiontext for x in candidates_reranke
 print('Reranked SoftCosine:','---'.join([x[0].questiontext for x in candidates_reranked_softcosine]).encode('utf-8'))
 print('Reranked Ensemble','---'.join(['**'.join([x[0].questiontext,str(x[1]),str(x[2])]) for x in candidates_reranked_ensemble]).encode('utf-8'))
 
-quit()
-
 # initialize topics
-topex = topic_extractor.TopicExtractor(commonness_path,ngram_entropy_path)
+if not questions[0].topics:
+    print('Extracting topics')
+    topex = topic_extractor.TopicExtractor(commonness_path,entropy_path)
+    for question in questions:
+        topics = topex.extract(question)
+        question.set_topics(topics)
+    questions_topics = [q.return_qdict() for q in qp.questions]
+    with open(questionspath,'w',encoding='utf-8') as file_out:
+        json.dump(questions_formatted,file_out)    
+
 
 
     

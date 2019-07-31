@@ -31,6 +31,9 @@ class Question:
         }
         return qdict
 
+    def set_topics(self,topics):
+        self.topics = topics
+
     def preprocess(self):
         nlp = spacy.load('nl_core_news_sm')
         self.tokens, self.lemmas, self.pos = [],[],[]
