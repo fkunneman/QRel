@@ -2,9 +2,6 @@
 import copy
 import numpy
 
-from qrel.functions import entity_extractor
-from qrel.classes import commonness
-
 class TopicExtractor:
 
     def __init__(self,ngram_commonness,ngram_entropy):
