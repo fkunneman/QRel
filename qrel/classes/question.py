@@ -31,8 +31,14 @@ class Question:
         }
         return qdict
 
+    def set_tokens(self,tokens):
+        self.tokens = tokens
+
     def set_topics(self,topics):
         self.topics = topics
+
+    def set_emb(self,emb):
+        self.emb = emb
 
     def preprocess(self):
         nlp = spacy.load('nl_core_news_sm')
@@ -44,9 +50,4 @@ class Question:
                 self.lemmas.append(token.lemma_)
                 self.pos.append(token.pos_)
 
-    def encode(self,word2vec):
-        for w in self.tokens:
-            try:
-                self.emb.append(word2vec[w])
-            except:
-                self.emb.append(300 * [0])
+

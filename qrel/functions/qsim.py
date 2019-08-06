@@ -19,6 +19,15 @@ class QSim:
         self.softcosine = False
         self.ensemble = False
 
+    def encode(self,tokens):
+        emb = []
+        for t in tokens:
+            try:
+                emb.append(self.w2v[t])
+            except:
+                emb.append(300 * [0])
+        return emb
+
     def id2question(self):
         id2q = {}
         for i,q in enumerate(self.questions):
@@ -28,7 +37,7 @@ class QSim:
     def add_question(self,qdict):
         q = question.Question()
         q.import_qdict(qdict)
-        q.encode(self.w2v)
+        q.set_emb(self.encode(q.tokens))
         self.questions.append(q)
         self.id2q[q.id] = len(self.questions)-1
         self.gv_bm25.init_model([q.tokens for q in self.questions])

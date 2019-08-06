@@ -1,105 +1,101 @@
 
-import numpy as np
-
-from sklearn.metrics.pairwise import cosine_similarity
+from qrel.classes import question
 
 class QuestionRelator:
 
     def __init__(self,sim_model):
-        self.sim_model = sim_model         
+        self.sim_model = sim_model
 
-    def return_prominent_topics(self,topics,percentage=0.70):
-        total = sum([x['topic_score'] for x in topics])
+    ##################################
+    ### TOPIC FUNCTIONS ##############
+    ##################################
+
+    def select_topics(self,q,percentage=0.70):
+        total = sum([t['topic_score'] for t in q.topics])
         if total == 0:
             return []
         acc = 0
-        selection = []
-        for topic in topics:
-            selection.append(topic)
+        cutoff = 0
+        for topic in q.topics:
+            cutoff += 1
             acc += topic['topic_score']
             if (acc/total > percentage):
                 break
-        return selection
+        return cutoff
+       
+    def format_topic(self,topic):
+        topic_tokens = topic['topic'].split()
+        topic_obj = question.Question()
+        topic_obj.set_tokens(topic_tokens)
+        topic_obj.set_emb(self.sim_model.encode(topic_tokens))        
+        return topic_obj
 
-    def deduplicate_candidates(self,q_index,candidates):
-        qids = []
-        deduplicated = []
-        for retrieved in bm25_output:
-            rid = self.sim_model.idx2id[retrieved[0]]
-            if rid != q_index:
-                if rid not in qids:
-                    qids.append(rid)
-                    deduplicated.append(retrieved+[rid])
-        return deduplicated
-                    
-    def retrieve_diverse_candidates(self,question,topics,ntargets):
-        if len(topics) == 1:
+    ##################################
+    ### SIMILARITY FUNCTIONS #########
+    ##################################
+
+    def retrieve_diverse_candidates(self,question,topic_cutoff,ntargets):
+        if topic_cutoff == 1:
             ntargets_by_chunk = ntargets
         else:
-            ntargets_by_chunk = int(ntargets / (len(topics)+1))
+            ntargets_by_chunk = int(ntargets / (topic_cutoff+1))
         candidates = self.sim_model.retrieve_candidates(question.tokens,ntargets_by_chunk)
-        if len(topics) > 1:
-            for i,topic in enumerate(topics):
-                candidates.extend(self.sim_model.retrieve_candidates(list(set(question.tokens) - set(topic['topic_text'].split())),ntargets_by_chunk))
-        candidates_ranked = sorted(candidates_scores,key = lambda k : k[1],reverse=True)
-        candidates_deduplicated = self.deduplicate_candidates(self.id2q[question.id],candidates_ranked)
-        return scores_deduplicated
+        cids = [question.id] + [c.id for c in candidates]
+        if topic_cutoff > 1:
+            for i,topic in enumerate(question.topics[:topic_cutoff]):
+                candidates.extend([c for c in self.sim_model.retrieve_candidates(list(set(question.tokens) - set(topic['topic_text'].split())),ntargets_by_chunk) if c.id not in cids])
+        return candidates
 
-    def rank_questions_topics(self,question,topics,targets):
+    def rank_questions_topic(self,question,topic,targets):
+        topic_obj = self.format_topic(topic)
+        topic_ranked = self.sim_model.rerank_candidates(topic_obj,targets,'softcosine')
+        return topic_ranked
+
+    def rank_questions_topics(self,question,topic_cutoff,targets):
         ranked_by_topic = []
-        for topic in topics:
-            tokens = topic['topic'].split()
-            if not self.topic_emb[topic['topic']]:
-                self.topic_emb[topic['topic']] = self.sim_model.encode(tokens)
-            emb = self.topic_emb[topic['topic']]
-            topic_sims = []
-            for target in targets:
-                # sim = self.softcosine_topics(tokens, emb, target[1], target[2])
-                sim = self.sim_model.softcos(tokens, emb, target[1], target[2])
-                topic_sims.append(target + [topic['topic'],sim])
-            topic_sims_ranked = sorted(topic_sims,key = lambda k : k[-1],reverse=True)
-            ranked_by_topic.append(topic_sims_ranked)
-        return ranked_by_topic
+        for topic in question.topics[:topic_cutoff]:
+            ranked_by_topic.append(self.rank_questions_topic(question,topic,candidates))
     
-    def relate_question(self,question,topic_percentage=0.70,ncandidates=50):
+    ##################################
+    ### MAIN FUNCTIONS ###############
+    ##################################
+
+    def select_related_questions(question,topic_cutoff,candidates,n):
+        topics_ranked = self.rank_questions_topics(question,topic_cutoff,[c[0] for c in candidates])
+        topics_ranked_plus_sim = topics_ranked + [candidates]
+        related_questions = []
+        topics = [t['topic'] for t in question.topics[:topic_cutoff]] + ['plain_sim']
+        while len(related_questions) < n:
+            c = len(related_questions)
+            for i,ranking in enumerate(topics_ranked_plus_sim):
+                if len(ranking) == 0: # no candidates returned
+                    continue
+                if ranking[0] == 0.0: # candidate not similar
+                    continue
+                candidates_ids = [rq[0].id for rq in related_questions]
+                for x in ranking:
+                    if x[0].id not in candidates_ids: # make sure that question is not in related questions yet
+                        related_questions.append([x,topics[i]]) 
+                        break
+            if c == len(related_questions): # no improvement
+                break
+        return related_questions
+
+    def relate_question(self,question,topic_percentage=0.70,ncandidates=50,num_related=5):
 
         # select prominent topics
-        prominent_topics = self.return_prominent_topics(question.topics,topic_percentage)
+        topic_cutoff = self.select_topics(question,topic_percentage)
 
         # retrieve candidate_questions
-        candidates = self.retrieve_diverse_candidates(question,prominent_topics,ncandidates)
+        candidates = self.retrieve_diverse_candidates(question,topic_cutoff,ncandidates)
 
         # score and rank questions by similarity
-        ranked_candidates = self.sim_model.rerank_candidates(question,candidates)
+        ranked_candidates = self.sim_model.rerank_candidates(question,candidates,'ensemble')
+        
+        # filter questions labeled as similar (duplicate) by the similarity ranking
+        ranked_candidates_filtered = [c for c in ranked_candidates if c[-1] == 0]
 
-        # apply end systems
-        ranked_candidates_nondup = [c for c in ranked_candidates if c[-1] == 0]
+        # make a selection of five relevant, novel and diverse questions
+        related_questions = self.select_related_questions(question,topic_cutoff,ranked_candidates_filtered,num_related)
 
-        try:
-            candidates_first_topic = self.rank_questions_topics(question,[prominent_topics[0]],ranked_candidates_nondup)[0]
-            candidates_first_topic_ranked = sorted(candidates_first_topic,key=lambda k : (k[-1],k[3]),reverse=True)[:5]
-            candidates_prominent_topics = [candidates_first_topic_ranked] + self.rank_questions_topics(question,prominent_topics[1:],ranked_candidates_nondup) + [ranked_candidates_nondup]
-            ranking_topic = prominent_topics + ['plain_sim']
-            related_questions = []
-            while len(related_questions) < 5:
-                c = len(related_questions)
-                for i,ranking in enumerate(candidates_prominent_topics):
-                    if len(ranking) == 0:
-                        continue
-                    if ranking[0] == 0.0:
-                        continue
-                    candidates_ids = [rq[0].id for rq in related_questions]
-                    for x in ranking:
-                        if x[0].id not in candidates_ids:
-                            if i == len(candidates_prominent_topics)-1:
-                                x.extend(['plain_sim',0])
-                            related_questions.append(x) 
-                            break
-                if c == len(related_questions): # no improvement
-                    break
-
-            related_questions = sorted(related_questions,key=lambda k : (k[-1],k[3]),reverse=True)[:5] 
-        except:
-            print('Error when extracting related questions')
-            related_questions = []
         return related_questions

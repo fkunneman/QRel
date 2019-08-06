@@ -28,10 +28,19 @@ if os.path.exists(questionspath):
         questiondicts = json.loads(file_in.read())
     print('Formatting questions')
     questions = []
-    for qd in questiondicts:
+    for qd in questiondicts[:-10]:
         qobj = question.Question()
         qobj.import_qdict(qd)
         questions.append(qobj)
+    questions_test = []
+    for qd in questiondicts[-10:]:
+        qobj = question.Question()
+        qobj.import_qdict(qd)
+        qobj.tokens = False
+        qobj.lemmas = False
+        qobj.pos = False
+        qobj.topics = False
+        questions_test.append(qobj)        
 
 else:
     print('File with questions',questionspath,'does not exist, exiting program...')
@@ -60,30 +69,38 @@ qs.init_softcosine()
 print('Initializing Ensemble')
 qs.init_ensemble(ensemblepath,training_questionspath)
 
-candidates = qs.retrieve_candidates(questions[0],10)
-candidates_reranked_trlm = qs.rerank_candidates(questions[0],candidates,approach='trlm')
-candidates_reranked_softcosine = qs.rerank_candidates(questions[0],candidates,approach='softcosine')
-candidates_reranked_ensemble = qs.rerank_candidates(questions[0],candidates)
-print('Seed question:',questions[0].questiontext.encode('utf-8'))
-print('Candidates BM25:','---'.join([x.questiontext for x in candidates]).encode('utf-8'))
-print('Reranked TRLM:','---'.join([x[0].questiontext for x in candidates_reranked_trlm]).encode('utf-8'))
-print('Reranked SoftCosine:','---'.join([x[0].questiontext for x in candidates_reranked_softcosine]).encode('utf-8'))
-print('Reranked Ensemble','---'.join(['**'.join([x[0].questiontext,str(x[1]),str(x[2])]) for x in candidates_reranked_ensemble]).encode('utf-8'))
+# initialize topic extractor
+print('Initializing topic extractor')
+topex = topic_extractor.TopicExtractor(commonness_path,entropy_path)
 
-# initialize topics
-if not questions[0].topics:
+# initialize question relator
+print('Initializing question relator')
+qr = qrel.QuestionRelator(qs)
+
+# prepare test questions
+print('Relating held-out questions')
+for q in questions_test:
+    print('Question',q.questiontext.encode('utf-8'))
+    print('Preprocessing question')
+    q.preprocess()
     print('Extracting topics')
-    topex = topic_extractor.TopicExtractor(commonness_path,entropy_path)
-    for question in questions:
-        topics = topex.extract(question)
-        question.set_topics(topics)
-    questions_topics = [q.return_qdict() for q in qp.questions]
-    with open(questionspath,'w',encoding='utf-8') as file_out:
-        json.dump(questions_formatted,file_out)
-
-# relating questions
-
-
-
-
-    
+    topics = topex.extract(question)
+    q.set_topics(topics)
+    print('Topics','---'.join([t['topic'] for t in topics]).encode('utf-8'))
+    print('Encoding question')
+    emb = qs.encode(q.tokens)
+    q.set_emb(emb)
+    print('Retrieving similar questions')
+    candidates = qs.retrieve_candidates(q,10)
+    candidates_reranked_trlm = qs.rerank_candidates(q,candidates,approach='trlm')
+    candidates_reranked_softcosine = qs.rerank_candidates(q,candidates,approach='softcosine')
+    candidates_reranked_ensemble = qs.rerank_candidates(q,candidates)
+    print('Candidates BM25:','---'.join([x.questiontext for x in candidates]).encode('utf-8'))
+    print('Reranked TRLM:','---'.join([x[0].questiontext for x in candidates_reranked_trlm]).encode('utf-8'))
+    print('Reranked SoftCosine:','---'.join([x[0].questiontext for x in candidates_reranked_softcosine]).encode('utf-8'))
+    print('Reranked Ensemble','---'.join(['**'.join([x[0].questiontext,str(x[1]),str(x[2])]) for x in candidates_reranked_ensemble]).encode('utf-8'))
+    print('Retrieving related questions')
+    related = qr.relate_question(q)
+    print('Related questions:')
+    for r in related:
+        print('***'.join([str(x) for x in r]).encode('utf-8'))
