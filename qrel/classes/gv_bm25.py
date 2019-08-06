@@ -23,7 +23,7 @@ class GV_BM25:
             p.dump(self.model, fid)
     
     def return_scores(self,question):
-        return self.model.get_scores(question)
+        return self.model.get_scores(question.tokens)
 
     def return_score(self,q1,q2_idx):
         return self.model.get_score(q1.tokens,q2_idx)

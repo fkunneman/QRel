@@ -57,7 +57,7 @@ class TRLM:
             except:
                 w_C = 1.0 / len(self.dict)
 
-            ml_w_Q = float(Q[Q == w].count()) / Q_count
+            ml_w_Q = float(q2.tokens.count(w)) / Q_count
             mx_w_Q = 0.0
 
             for j, t in enumerate(q2.tokens):
