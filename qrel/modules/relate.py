@@ -7,7 +7,7 @@ from gensim.corpora import Dictionary
 from gensim.models import TfidfModel, Word2Vec
 
 from qrel.classes import question
-from qrel.functions import qsim, topic_extractor
+from qrel.functions import qsim, qrel, topic_extractor
 
 script_dir = os.path.dirname(__file__)
 questionspath = script_dir + '/../../data/questions.json'
@@ -79,7 +79,10 @@ if not questions[0].topics:
         question.set_topics(topics)
     questions_topics = [q.return_qdict() for q in qp.questions]
     with open(questionspath,'w',encoding='utf-8') as file_out:
-        json.dump(questions_formatted,file_out)    
+        json.dump(questions_formatted,file_out)
+
+# relating questions
+
 
 
 
