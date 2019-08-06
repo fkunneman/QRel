@@ -135,4 +135,3 @@ class QSim:
                 for candidate in candidates:
                     candidate_score.append([candidate] + self.qsim(q,candidate))
         return sorted(candidate_score,key = lambda k : k[1],reverse = True)
-
