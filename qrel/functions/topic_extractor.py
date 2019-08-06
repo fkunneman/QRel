@@ -133,7 +133,7 @@ class TopicExtractor:
     ###############
 
     def extract(self,question,max_topics=5):
-        topics_commonness = [[e,self.cs[e]] for e in self.filter_entities(list(set(question.lemmas) & self.commonness_set),question)]
+        topics_commonness = [[e,self.cs[e]] for e in self.filter_entities(list(set(question.lemmas) & self.commonness_set),question) if self.cs[e] > 0.05]
         topics_entropy = [[e,self.entropy[e]] for e in self.filter_entities(list(set(question.lemmas) & self.entropy_set),question)]
         topics_ranked = self.rerank_topics(topics_commonness,topics_entropy)
         topics_filtered = self.reduce_overlap(topics_ranked)[:max_topics]

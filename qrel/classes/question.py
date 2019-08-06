@@ -45,8 +45,8 @@ class Question:
                 self.pos.append(token.pos_)
 
     def encode(self,word2vec):
-        for w in question.tokens:
+        for w in self.tokens:
             try:
-                emb.append(word2vec[w])
+                self.emb.append(word2vec[w])
             except:
-                emb.append(300 * [0])
+                self.emb.append(300 * [0])

@@ -111,8 +111,8 @@ class QSim:
     def qsim(self,question1,question2):
         return self.ensemble.apply_model(self.return_scores(question1,question2))
 
-    def retrieve_candidates(self,question,n):
-        scores = self.gv_bm25.return_scores(question.tokens)
+    def retrieve_candidates(self,questiontokens,n):
+        scores = self.gv_bm25.return_scores(questiontokens)
         scores_numbers = [[i,score] for i,score in enumerate(scores)]
         scores_numbers_ranked = sorted(scores_numbers,key = lambda k : k[1],reverse=True)
         return [self.questions[i] for i,score in scores_numbers_ranked[:n]]
@@ -123,8 +123,8 @@ class QSim:
             for candidate in candidates:
                 candidate_score.append([candidate,self.bm25.return_score(q,candidate)])
         else:
-            q.encode(self.w2v)
-            [c.encode(self.w2v) for c in candidates]
+            q.encode(self.w2v) 
+            [c.encode(self.w2v) for c in candidates if len(c.emb) == 0]
             if approach == 'trlm':
                 for candidate in candidates:
                     candidate_score.append([candidate,self.trlm.apply_model(q,candidate)])
