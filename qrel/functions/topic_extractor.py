@@ -54,11 +54,8 @@ class TopicExtractor:
                     continue
                 try:
                     pos = self.match_index(entity,question.lemmas,question.pos)
-                    print(entity.encode('utf-8'),pos)
-                    if not pos in ['DET','PRON','ADP','ADV','CCONJ','SCONJ']:
+                    if not pos in ['DET','PRON','ADP','ADV','CCONJ','SCONJ','CONJ']:
                         filtered.append(entity)
-                    else:
-                        print('FILTERED')
                 except:
                     print('COULD NOT FIND INDEX FOR',entity.encode('utf-8'),'in',' '.join(question.lemmas).encode('utf-8'))
                     continue

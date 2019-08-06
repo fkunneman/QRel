@@ -54,15 +54,16 @@ class QuestionRelator:
     def rank_questions_topics(self,question,topic_cutoff,targets):
         ranked_by_topic = []
         for topic in question.topics[:topic_cutoff]:
-            ranked_by_topic.append(self.rank_questions_topic(question,topic,candidates))
+            ranked_by_topic.append(self.rank_questions_topic(question,topic,targets))
+        return ranked_by_topic
     
     ##################################
     ### MAIN FUNCTIONS ###############
     ##################################
 
-    def select_related_questions(question,topic_cutoff,candidates,n):
+    def select_related_questions(self,question,topic_cutoff,candidates,n):
         topics_ranked = self.rank_questions_topics(question,topic_cutoff,[c[0] for c in candidates])
-        topics_ranked_plus_sim = topics_ranked + [candidates]
+        topics_ranked_plus_sim = topics_ranked + [[c[:2] for c in candidates]]
         related_questions = []
         topics = [t['topic'] for t in question.topics[:topic_cutoff]] + ['plain_sim']
         while len(related_questions) < n:
@@ -75,11 +76,11 @@ class QuestionRelator:
                 candidates_ids = [rq[0].id for rq in related_questions]
                 for x in ranking:
                     if x[0].id not in candidates_ids: # make sure that question is not in related questions yet
-                        related_questions.append([x,topics[i]]) 
+                        related_questions.append(x + [topics[i]]) 
                         break
             if c == len(related_questions): # no improvement
                 break
-        return related_questions
+        return related_questions[:5]
 
     def relate_question(self,question,topic_percentage=0.70,ncandidates=50,num_related=5):
 

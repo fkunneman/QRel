@@ -22,8 +22,8 @@ class GV_BM25:
         with open(modelpath, 'wb') as fid:
             p.dump(self.model, fid)
     
-    def return_scores(self,question):
-        return self.model.get_scores(question.tokens)
+    def return_scores(self,questiontokens):
+        return self.model.get_scores(questiontokens)
 
     def return_score(self,q1,q2_idx):
         return self.model.get_score(q1.tokens,q2_idx)

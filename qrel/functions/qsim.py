@@ -42,15 +42,10 @@ class QSim:
         self.id2q[q.id] = len(self.questions)-1
         self.gv_bm25.init_model([q.tokens for q in self.questions])
 
-    def init_bm25(self,modelpath):
+    def init_bm25(self):
         self.gv_bm25 = gv_bm25.GV_BM25()
-        if os.path.exists(modelpath):
-            self.gv_bm25.load_model(modelpath)
-        else:
-            print('File with BM25 model',modelpath,'does not exist, training new model...')
-            self.gv_bm25.init_model([q.tokens for q in self.questions])
-            print('Done. Saving model to',modelpath)
-            self.gv_bm25.save_model(modelpath)
+        print('Training  BM25model...')
+        self.gv_bm25.init_model([q.tokens for q in self.questions])
 
     def init_trlm(self,modelpath):
         self.trlm = trlm.TRLM(self.d)
@@ -132,8 +127,11 @@ class QSim:
             for candidate in candidates:
                 candidate_score.append([candidate,self.bm25.return_score(q,candidate)])
         else:
-            q.encode(self.w2v) 
-            [c.encode(self.w2v) for c in candidates if len(c.emb) == 0]
+            if len(q.emb) == 0:
+                q.set_emb(self.encode(q.tokens))
+            for c in candidates:
+                if len(c.emb) == 0:
+                    c.set_emb(self.encode(c.tokens))
             if approach == 'trlm':
                 for candidate in candidates:
                     candidate_score.append([candidate,self.trlm.apply_model(q,candidate)])

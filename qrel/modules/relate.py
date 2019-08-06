@@ -15,7 +15,6 @@ training_questionspath = script_dir + '/../../data/training_questions.json'
 dictpath = script_dir + '/../../data/dict.model'
 w2vpath = script_dir + '/../../data/word2vec.300_10.model'
 tfidfpath = script_dir + '/../../data/tfidf.model'
-bm25path = script_dir + '/../../data/bm25.pkl'
 trlmpath = script_dir + '/../../data/trlm.json'
 ensemblepath = script_dir + '/../../data/ensemble.pkl'
 commonness_path = script_dir + '/../../data/commonness_ngrams.txt'
@@ -61,7 +60,7 @@ word2vec = Word2Vec.load(w2vpath)
 tfidf = TfidfModel.load(tfidfpath)
 qs = qsim.QSim(questions,d,tfidf,word2vec)
 print('Initializing BM25')
-qs.init_bm25(bm25path)
+qs.init_bm25()
 print('Initializing TRLM')
 qs.init_trlm(trlmpath)
 print('Initializing SoftCosine')
@@ -84,14 +83,14 @@ for q in questions_test:
     print('Preprocessing question')
     q.preprocess()
     print('Extracting topics')
-    topics = topex.extract(question)
+    topics = topex.extract(q)
     q.set_topics(topics)
     print('Topics','---'.join([t['topic'] for t in topics]).encode('utf-8'))
     print('Encoding question')
     emb = qs.encode(q.tokens)
     q.set_emb(emb)
     print('Retrieving similar questions')
-    candidates = qs.retrieve_candidates(q,10)
+    candidates = qs.retrieve_candidates(q.tokens,10)
     candidates_reranked_trlm = qs.rerank_candidates(q,candidates,approach='trlm')
     candidates_reranked_softcosine = qs.rerank_candidates(q,candidates,approach='softcosine')
     candidates_reranked_ensemble = qs.rerank_candidates(q,candidates)
@@ -103,4 +102,4 @@ for q in questions_test:
     related = qr.relate_question(q)
     print('Related questions:')
     for r in related:
-        print('***'.join([str(x) for x in r]).encode('utf-8'))
+        print('***'.join([r[0].questiontext,str(r[1]),str(r[2])]).encode('utf-8'))
