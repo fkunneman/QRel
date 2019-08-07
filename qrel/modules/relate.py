@@ -166,10 +166,7 @@ class Relate:
         print('Initializing question relator')
         self.qr = qrel.QuestionRelator(self.qs)
 
-    def main():
-        self.relate('Hoe stuurt een Chinees een SMS?','1234567')
-  
-main()
-
-
+        
+if __name__ == '__main__':
+    Relate().relate('Hoe stuurt een Chinees een SMS?','1234567')
 
