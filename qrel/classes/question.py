@@ -10,7 +10,9 @@ class Question:
         self.lemmas = False
         self.pos = False
         self.topics = False
+        self.related = False
         self.emb = [] # not stored in qdict
+
 
     def import_qdict(self,qdict):
         self.id = qdict['id']
@@ -19,6 +21,7 @@ class Question:
         self.lemmas = qdict['lemmas'] if 'lemmas' in qdict.keys() else False
         self.pos = qdict['pos'] if 'pos' in qdict.keys() else False
         self.topics = qdict['topics'] if 'topics' in qdict.keys() else False
+        self.related = qdict['related'] if 'related' in qdict.keys() else False
 
     def return_qdict(self,txt=True):
         qdict = {
@@ -27,7 +30,8 @@ class Question:
             'tokens':self.tokens,
             'lemmas':self.lemmas,
             'pos':self.pos,
-            'topics':self.topics
+            'topics':self.topics,
+            'related':self.related
         }
         return qdict
 
@@ -36,6 +40,9 @@ class Question:
 
     def set_topics(self,topics):
         self.topics = topics
+
+    def set_related(self,related):
+        self.related = related
 
     def set_emb(self,emb):
         self.emb = emb
