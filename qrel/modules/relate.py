@@ -36,7 +36,7 @@ class Relate:
         self.init_topex()
         self.init_qrel()
 
-    def relate(self,qtext,qid):
+    def __call__(self, qtext,qid,ncandidates=50):
 
         # prepare question object
         q = question.Question()
@@ -47,18 +47,19 @@ class Relate:
         q.set_topics(self.topex.extract(q))
 
         # retrieve related questions
-        related = self.qr.relate_question(q)
-        print('Related',related)
-        quit()
-
-        # update related questions
-        self.update(q,related)
+        related = self.qr.relate_question(q,ncandidates=ncandidates)
+        q.set_related(related)
+        
+        # update model
+        self.update(q)
+        
+        return {'questiontext':qtext,'qid':qid,'related':related}
 
     def relate_many(self,questions):
         pass
 
-    def update(self,q,related):
-        pass
+    def update(self,q):
+        self.questions.append(q)
 
     def test(self):
 
@@ -118,7 +119,7 @@ class Relate:
             for qd in questiondicts:
                 qobj = question.Question()
                 qobj.import_qdict(qd)
-                questions.append(qobj)
+                self.questions.append(qobj)
       
         else:
             print('File with questions',questionspath,'does not exist, exiting program...')
@@ -166,7 +167,4 @@ class Relate:
         print('Initializing question relator')
         self.qr = qrel.QuestionRelator(self.qs)
 
-        
-if __name__ == '__main__':
-    Relate().relate('Hoe stuurt een Chinees een SMS?','1234567')
 

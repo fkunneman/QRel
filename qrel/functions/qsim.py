@@ -44,7 +44,7 @@ class QSim:
 
     def init_bm25(self):
         self.gv_bm25 = gv_bm25.GV_BM25()
-        print('Training  BM25model...')
+        print('Training BM25model...')
         self.gv_bm25.init_model([q.tokens for q in self.questions])
 
     def init_trlm(self,modelpath):

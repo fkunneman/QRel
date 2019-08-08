@@ -73,10 +73,10 @@ class QuestionRelator:
                     continue
                 if ranking[0] == 0.0: # candidate not similar
                     continue
-                candidates_ids = [rq[0].id for rq in related_questions]
+                candidates_ids = [rq[0] for rq in related_questions]
                 for x in ranking:
                     if x[0].id not in candidates_ids: # make sure that question is not in related questions yet
-                        related_questions.append(x + [topics[i]]) 
+                        related_questions.append([x[0].id,x[0].questiontext,x[1],topics[i]]) 
                         break
             if c == len(related_questions): # no improvement
                 break
