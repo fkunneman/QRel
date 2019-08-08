@@ -89,6 +89,7 @@ class QuestionRelator:
 
         # retrieve candidate_questions
         candidates = self.retrieve_diverse_candidates(question,topic_cutoff,ncandidates)
+        candidates_output = [c.id for c in candidates]
 
         # score and rank questions by similarity
         ranked_candidates = self.sim_model.rerank_candidates(question,candidates,'ensemble')
@@ -99,4 +100,4 @@ class QuestionRelator:
         # make a selection of five relevant, novel and diverse questions
         related_questions = self.select_related_questions(question,topic_cutoff,ranked_candidates_filtered,num_related)
 
-        return related_questions
+        return related_questions, candidates_output
