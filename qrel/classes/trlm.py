@@ -4,6 +4,11 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 class TRLM:
+    """
+    class to apply the translation-based language model (TRLM) to score the similarity between any two strings,
+    using cosine similarity and based on tfidf values and the semantic representation of the words 
+    returns a similarity score
+    """
 
     def __init__(self,d):
         self.dict = d
@@ -28,11 +33,13 @@ class TRLM:
         self.prob_w_C = w_Q
 
     def save_model(self,trlm_path):
+        # save trained TRLM values to file
     	trlm_output = {'alpha':self.alpha,'sigma':self.sigma,'w_Q':self.prob_w_C}
     	with open(trlm_path,'w',encoding='utf-8') as output_file:
     		json.dump(trlm_output,output_file)
 
     def load_model(self,trlm_path):
+        # load trained TRLM values from file
         with open(trlm_path,'r',encoding='utf-8') as trlm_in:
         	translation = json.loads(trlm_in.read())
         self.alpha = translation['alpha']
@@ -40,7 +47,13 @@ class TRLM:
         self.prob_w_C = translation['w_Q']
 
     def apply_model(self,q1,q2):
-       
+        """ 
+        apply TRLM given the trained probabilities and word tokens of two questions
+        Implementation by Thiago Castro Ferreira, formula is based on:
+        Xue, X., Jeon, J., & Croft, W. B. (2008, July). Retrieval models for question and answer archives. 
+        In Proceedings of the 31st annual international ACM SIGIR conference on Research and development in information retrieval 
+        (pp. 475-482). ACM.
+        """
         score = 0.0
         if len(q1.tokens) == 0 or len(q2.tokens) == 0: return 0.0
 
