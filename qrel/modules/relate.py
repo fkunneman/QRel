@@ -48,6 +48,7 @@ class Relate:
         self.qr = False
 
         self.nlp = spacy.load('nl_core_news_sm')
+        self.nlp.disable_pipes('parser','ner')
         self.load_questions()
         self.init_topex()
         self.prepare_questions()
