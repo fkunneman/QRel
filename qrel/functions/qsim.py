@@ -160,7 +160,7 @@ class QSim:
         try:
             return self.ensemble.apply_model(self.return_scores(question1,question2))
         except ValueError: # vectors not workable
-            print('Could not calculate similarity between questions, returning 0-values')
+            print('Could not calculate similarity between particular questions, returning 0-values')
             return [0.0,0]
 
     def return_scores(self,question1,question2):
@@ -194,7 +194,7 @@ class QSim:
         candidate_score = []
         if approach == 'bm25':
             for candidate in candidates:
-                candidate_score.append([candidate,self.bm25.return_score(q,candidate)])
+                candidate_score.append([candidate,self.gv_bm25.return_score(q,self.id2q[candidate.id])])
         else:
             if len(q.emb) == 0:
                 q.set_emb(self.encode(q.tokens))

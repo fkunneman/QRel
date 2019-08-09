@@ -11,6 +11,7 @@
 import os
 import sys
 import json
+import warnings
 
 import numpy
 import spacy
@@ -32,6 +33,8 @@ ensemblepath = script_dir + '/../../data/ensemble.pkl'
 commonness_path = script_dir + '/../../data/commonness_ngrams.txt'
 entropy_path = script_dir + '/../../data/entropy_ngrams.txt'
 
+warnings.filterwarnings("ignore")
+
 class Relate:
     """
     Container of all modules that communicate with the functions and classes in the QREL 
@@ -43,6 +46,7 @@ class Relate:
         All relevant models are initialized based on the file paths specified above of this class
         """
         self.questions = []
+        self.candidates = []
         self.qs = False
         self.topex = False
         self.qr = False
@@ -81,7 +85,6 @@ class Relate:
         print('Initializing topic extractor')
         self.topex = topic_extractor.TopicExtractor(commonness_path,entropy_path)
 
-
     def prepare_questions(self,index=0):
         # prepare questions - make sure they are preprocessed and their topics are extracted
         if not self.questions[index].lemmas: # rudimental check if preprocessing has already been done
@@ -91,9 +94,7 @@ class Relate:
                 if i in counter:
                     print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
                 q.preprocess(self.nlp)
-            questions_preprocessed = [q.return_qdict() for q in self.questions]
-            with open(questionspath,'w',encoding='utf-8') as file_out: # store updated questions in file
-                json.dump(questions_preprocessed,file_out)
+            self.save()
         if not self.questions[index].topics: # rudimental step to check if topics have been extracted
             print('Extracting topics from questions, this may take a while...')
             counter = range(0,len(self.questions)-index,100)
@@ -101,27 +102,32 @@ class Relate:
                 if i in counter:
                     print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
                 q.set_topics(self.topex.extract(q))
-            questions_topics = [q.return_qdict() for q in self.questions]
-            with open(questionspath,'w',encoding='utf-8') as file_out: # store updated questions in file
-                json.dump(questions_preprocessed,file_out)
-
-    def init_qsim(self):
+            self.save()
+                
+    def init_qsim(self,bm25only=False):
         # initialize qsim
 
-        # load models needed for initialization of qsim
-        d = Dictionary.load(dictpath)
-        word2vec = Word2Vec.load(w2vpath)
-        tfidf = TfidfModel.load(tfidfpath)
-        self.qs = qsim.QSim(self.questions,d,tfidf,word2vec)
-        # initialize separate components of qsim
-        print('Initializing BM25')
-        self.qs.init_bm25()
-        print('Initializing TRLM')
-        self.qs.init_trlm(trlmpath)
-        print('Initializing SoftCosine')
-        self.qs.init_softcosine()
-        print('Initializing Ensemble')
-        self.qs.init_ensemble(ensemblepath,training_questionspath)
+        # fast init
+        if bm25only:
+            self.qs.questions = self.questions
+            self.qs.init_bm25()
+            self.qs.id2q = self.qs.id2question()
+        # complete init
+        else:
+            # load models needed for initialization of qsim
+            d = Dictionary.load(dictpath)
+            word2vec = Word2Vec.load(w2vpath)
+            tfidf = TfidfModel.load(tfidfpath)
+            self.qs = qsim.QSim(self.questions,d,tfidf,word2vec)
+            # initialize separate components of qsim
+            print('Initializing BM25')
+            self.qs.init_bm25()
+            print('Initializing TRLM')
+            self.qs.init_trlm(trlmpath)
+            print('Initializing SoftCosine')
+            self.qs.init_softcosine()
+            print('Initializing Ensemble')
+            self.qs.init_ensemble(ensemblepath,training_questionspath)
 
     def init_qrel(self):
         # initialize question relator
@@ -152,9 +158,9 @@ class Relate:
         q.set_related(related)
         
         # update model
-        self.update(q)
+        self.update(q,candidates)
         
-        return {'questiontext':qtext,'qid':qid,'related':related,'candidates':candidates}
+        return {'questiontext':qtext,'qid':qid,'related':related}
 
     def most_similar(self,qtext,model='ensemble'):
         """
@@ -164,7 +170,6 @@ class Relate:
         # prepare question object
         q = question.Question()
         q.questiontext = qtext
-        q.id = qid
         q.preprocess(self.nlp)
         q.set_emb(self.qs.encode(q.tokens))
 
@@ -172,8 +177,8 @@ class Relate:
         candidates = self.qs.retrieve_candidates(q.tokens,15)
         similar = self.qs.rerank_candidates(q,candidates,approach=model)
         
-        if model == ensemble:
-            return {'questiontext':qtext, 'similar':[[x[0].id,x[0].questiontext,x[1],x[2]] for x in similar[:5]]}
+        if model == 'ensemble':
+            return {'questiontext':qtext, 'similar':[[x[0].id,x[0].questiontext,x[1],int(x[2])] for x in similar[:5]]}
         else:
             return {'questiontext':qtext, 'similar':[[x[0].id,x[0].questiontext,x[1],0] for x in similar[:5]]}
 
@@ -184,7 +189,7 @@ class Relate:
         index = len(self.questions) # the current number of questions is stored to prevent redundant computations 
         self.load_questions(qpath) # add questions to current questions
         self.prepare_questions(index) # if questions do not contain preprocessed and/or topic information, apply these procedures
-        self.init_qsim() # reinitialize question similarity model with added questions
+        self.init_qsim(bm25only=True) # reinitialize question similarity model with added questions
         self.init_qrel() # reinitialize question relatedness model with added questions
         redo = [] # list to store questions in original dataset that might need their related questions updated
         print('Relating new questions, this may take a while...')
@@ -195,28 +200,44 @@ class Relate:
             related, candidates = self.qr.relate_question(q) # apply question relatedness
             q.set_related(related)
             redo.extend(candidates) # store all candidates related to the current question, their question relatedness will be updated later
-        print('Done. Writing data')
-        questions_related = [q.return_qdict() for q in self.questions]
-        with open(questionspath,'w',encoding='utf-8') as file_out: # store updated questions to file
-            json.dump(questions_related,file_out)
-        print('Updating related questions for original dataset, this may take a while...')
         # update related questions for original questions
-        candidates_filtered = [c for c in list(set(redo)) if self.qs.id2q[c] < index]
-        counter = range(0,len(candidates),100)
-        for i,c in enumerate(candidates_filtered):
+        self.candidates = [c for c in list(set(redo)) if self.qs.id2q[c] < index]
+        self.update_candidates()
+        
+    def update(self,q,candidates):
+        # function to update models with added question
+        self.questions.append(q)
+        self.candidates.extend(candidates)
+        self.init_qsim(bm25only=True) # reinitialize question similarity model with added question
+        self.init_qrel()
+
+    def save(self):
+        # function to write current questions to file
+        print('Overwriting files with current dataset')
+        extended_questions_json = [q.return_qdict() for q in self.questions]
+        with open(questionspath,'w',encoding='utf-8') as file_out: # store updated questions to file
+            json.dump(extended_questions_json,file_out)
+        try:
+            related_questions_json = [q.return_qdict(short=True) for q in self.questions]
+            with open(related_questionspath,'w',encoding='utf-8') as file_out:
+                json.dump(related_questions_json,file_out)
+        except:
+            pass
+                
+    def update_candidates(self):
+        print('Updating related questions for candidates, this may take a while...')
+        # update related questions for candidates
+        counter = range(0,len(self.candidates),100)
+        for i,c in enumerate(self.candidates):
             if i in counter:
-                print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
+                print('Question',i,'of',len(self.candidates),'(counting per 100)')
             cq = self.questions[self.qs.id2q[c]]
-            related, candidates = self.qr.relate_question(q)
+            related, candidates = self.qr.relate_question(cq)
             cq.set_related(related)
         print('Done. Writing data')
-        all_questions_related = [q.return_qdict() for q in self.questions]
-        with open(questionspath,'w',encoding='utf-8') as file_out: # store updated questions to file
-            json.dump(all_questions_related,file_out)
-
-    def update(self,q):
-        self.questions.append(q)
-
+        self.save()
+        self.candidates = []
+        
 
     ############
     ### TEST ###
@@ -279,13 +300,13 @@ class Relate:
         Function to test question similarity and relatedness procedure for a new file with many questions
         """
         many_questions_test = []
-        for qobj in self.questions[-1000:]: # select held-out questions and remove preprocessing and topic information
+        for qobj in self.questions[-10:]: # select held-out questions and remove preprocessing and topic information
             qobj.tokens = False
             qobj.lemmas = False
             qobj.pos = False
             qobj.topics = False
             many_questions_test.append(qobj)  
-        self.questions = self.questions[:-1000] # strip held-out questions from original questions
+        self.questions = self.questions[:-10] # strip held-out questions from original questions
         # reinitialize models
         self.init_qsim()
         self.init_qrel()

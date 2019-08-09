@@ -24,17 +24,23 @@ class Question:
         self.topics = qdict['topics'] if 'topics' in qdict.keys() else False
         self.related = qdict['related'] if 'related' in qdict.keys() else False
 
-    def return_qdict(self):
+    def return_qdict(self,short=False):
         # function to return questions to json to write to output 
-        qdict = {
-            'id':self.id,
-            'questiontext':self.questiontext,
-            'tokens':self.tokens,
-            'lemmas':self.lemmas,
-            'pos':self.pos,
-            'topics':self.topics,
-            'related':self.related
-        }
+        if short:
+            qdict = {
+                'qid':self.id,
+                'related':[{'questiontext':x[1],'qid':x[0]} for x in self.related]
+            }
+        else:
+            qdict = {
+                'id':self.id,
+                'questiontext':self.questiontext,
+                'tokens':self.tokens,
+                'lemmas':self.lemmas,
+                'pos':self.pos,
+                'topics':self.topics,
+                'related':self.related
+            }
         return qdict
 
     def set_tokens(self,tokens):

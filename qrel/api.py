@@ -12,7 +12,7 @@ app = Flask(__name__)
 model = relate.Relate()
 
 @app.route("/related", methods=['GET'])
-def search():
+def rel():
     """
     :return: return a selection of 5 related questions to a given target question, if applicable add the target question to questions in the database
     """
@@ -30,7 +30,7 @@ def search():
     return json.dumps(related)
 
 @app.route("/similar", methods=['GET'])
-def search():
+def sim():
     """
     :return: return 5 most similar questions to a given target question
     """
@@ -44,8 +44,20 @@ def search():
             similar = model.most_similar(request.json['text'],request.json['model']) # apply question similarity procedure with given model
         else:
             similar = model.most_similar(request.json['text']) # apply question simlarity procedure with default model (ensemble)
+    print('Done:',similar)
 
     return json.dumps(similar)
+
+@app.route("/update", methods=['GET'])
+def update():
+    """
+    update dataset by applying question relatedness to questions that were found related to new questions
+    """
+
+    if request.method == 'GET':
+        model.update_candidates()
+
+    return 'updated succesfully and written to files'
 
 # start-up api, by running python api.py
 if __name__ == '__main__':
