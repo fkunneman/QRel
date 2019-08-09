@@ -17,7 +17,7 @@ class Ensemble:
 
     def scale(self, trainvectors):
         return self.scaler.transform(trainvectors)
-
+        
     def train_regression(self, trainvectors, labels, c='1.0', penalty='l1', tol='1e-4',solver='saga', iterations=10, jobs=1, gridsearch='random'):
         
         self.train_scaler(trainvectors)

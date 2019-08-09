@@ -1,6 +1,4 @@
 
-import spacy
-
 class Question:
 
     def __init__(self):
@@ -12,7 +10,6 @@ class Question:
         self.topics = False
         self.related = False
         self.emb = [] # not stored in qdict
-
 
     def import_qdict(self,qdict):
         self.id = qdict['id']
@@ -47,8 +44,7 @@ class Question:
     def set_emb(self,emb):
         self.emb = emb
 
-    def preprocess(self):
-        nlp = spacy.load('nl_core_news_sm')
+    def preprocess(self,nlp):
         self.tokens, self.lemmas, self.pos = [],[],[]
         preprocessed = nlp(self.questiontext)
         for token in preprocessed:

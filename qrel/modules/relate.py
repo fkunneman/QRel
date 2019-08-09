@@ -4,6 +4,7 @@ import sys
 import json
 
 import numpy
+import spacy
 from gensim.corpora import Dictionary
 from gensim.models import TfidfModel, Word2Vec
 
@@ -31,6 +32,7 @@ class Relate:
         self.topex = False
         self.qr = False
 
+        self.nlp = spacy.load('nl_core_news_sm')
         self.load_questions()
         self.init_topex()
         self.prepare_questions()
@@ -43,7 +45,7 @@ class Relate:
         q = question.Question()
         q.questiontext = qtext
         q.id = qid
-        q.preprocess()
+        q.preprocess(self.nlp)
         q.set_emb(self.qs.encode(q.tokens))
         q.set_topics(self.topex.extract(q))
 
@@ -64,10 +66,10 @@ class Relate:
         self.init_qrel()
         redo = []
         print('Relating new questions, this may take a while...')
-        counter = range(0,len(self.questions)-index,1000)
+        counter = range(0,len(self.questions)-index,100)
         for i,q in enumerate(self.questions[index:]):
             if i in counter:
-                print('Question',i,'of',len(self.questions)-index)
+                print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
             related, candidates = self.qr.relate_question(q)
             q.set_related(related)
             redo.extend(candidates)
@@ -75,11 +77,13 @@ class Relate:
         questions_related = [q.return_qdict() for q in self.questions]
         with open(questionspath,'w',encoding='utf-8') as file_out:
             json.dump(questions_related,file_out)
-        print('Updating related questions for original dataset')
-        candidates_filtered = [c for c in list(set(candidates)) if self.qs[c] < index]
-        counter = range(0,len(candidates),1000)
-        for c in candidates_filtered:
-            cq = self.questions[self.qs[c]]
+        print('Updating related questions for original dataset, this may take a while...')
+        candidates_filtered = [c for c in list(set(redo)) if self.qs.id2q[c] < index]
+        counter = range(0,len(candidates),100)
+        for i,c in enumerate(candidates_filtered):
+            if i in counter:
+                print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
+            cq = self.questions[self.qs.id2q[c]]
             related, candidates = self.qr.relate_question(q)
             cq.set_related(related)
         print('Done. Writing data')
@@ -107,7 +111,7 @@ class Relate:
         for q in questions_test:
             print('Question',q.questiontext.encode('utf-8'))
             print('Preprocessing question')
-            q.preprocess()
+            q.preprocess(self.nlp)
             print('Extracting topics')
             topics = self.topex.extract(q)
             q.set_topics(topics)
@@ -138,20 +142,22 @@ class Relate:
     def test_relate_many(self):
 
         many_questions_test = []
-        for qobj in self.questions[-1000:]:
+        for qobj in self.questions[-10:]:
             qobj.tokens = False
             qobj.lemmas = False
             qobj.pos = False
             qobj.topics = False
             many_questions_test.append(qobj)  
-        self.questions = self.questions[:-1000]
+        self.questions = self.questions[:-10]
         self.init_qsim()
         self.init_qrel()
 
         print('Writing held-out questions to dummy file')
         many_questions_test_formatted = [q.return_qdict() for q in many_questions_test]
         qpath = questionspath[:-4] + 'dummy.json'
-
+        with open(qpath,'w',encoding='utf-8') as file_out:
+            json.dump(many_questions_test_formatted,file_out)
+                        
         print('Relating held-out questions from dummy file')
         self.relate_many(qpath)
 
@@ -177,20 +183,20 @@ class Relate:
         # prepare questions
         if not self.questions[index].lemmas:
             print('Preprocessing questions, this may take a while...')
-            counter = range(0,len(self.questions)-index,1000)
+            counter = range(0,len(self.questions)-index,100)
             for i,q in enumerate(self.questions[index:]):
                 if i in counter:
-                    print('Question',i,'of',len(self.questions)-index)
-                q.preprocess()
+                    print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
+                q.preprocess(self.nlp)
             questions_preprocessed = [q.return_qdict() for q in self.questions]
             with open(questionspath,'w',encoding='utf-8') as file_out:
                 json.dump(questions_preprocessed,file_out)
         if not self.questions[index].topics:
             print('Extracting topics from questions, this may take a while...')
-            counter = range(0,len(self.questions)-index,1000)
+            counter = range(0,len(self.questions)-index,100)
             for i,q in enumerate(self.questions[index:]):
                 if i in counter:
-                    print('Question',i,'of',len(self.questions)-index)
+                    print('Question',i,'of',len(self.questions)-index,'(counting per 100)')
                 q.set_topics(self.topex.extract(q))
             questions_topics = [q.return_qdict() for q in self.questions]
             with open(questionspath,'w',encoding='utf-8') as file_out:
@@ -227,9 +233,10 @@ class Relate:
 if __name__ == '__main__':
     
     arg = sys.argv[1]
+    model = Relate()
     if arg == 'test':
-        self.test_relate()
+        model.test_relate()
     elif arg == 'test_many':
-        self.test_relate_many()
+        model.test_relate_many()
     else:
-        self.relate_many(arg)
+        model.relate_many(arg)

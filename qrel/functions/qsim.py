@@ -113,7 +113,11 @@ class QSim:
         self.ensemble.train_regression(trainvectors=trainvectors, labels=labels, c='search', penalty='search', tol='search', gridsearch='brutal', jobs=10)
 
     def qsim(self,question1,question2):
-        return self.ensemble.apply_model(self.return_scores(question1,question2))
+        try:
+            return self.ensemble.apply_model(self.return_scores(question1,question2))
+        except ValueError: # vectors not workable
+            print('Could not calculate similarity between questions, returning 0-values')
+            return [0.0,0]
 
     def retrieve_candidates(self,questiontokens,n):
         scores = self.gv_bm25.return_scores(questiontokens)
