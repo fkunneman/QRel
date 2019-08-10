@@ -17,11 +17,10 @@ python setup.py install
 python -m spacy download nl_core_news_sm
 ```
 
+
 ## Data
 
-The system only functions if the correct files are included in the repository, of which the prospected paths are listed in qrel/modules/relate.py
-
-These files are not standardly included in the repository, due to their size and privacy restrictions. 
+The system only functions if the correct files are included in the repository. These files are not standardly included in the repository, due to their size and privacy restrictions. Their prospected paths are listed in qrel/modules/relate.py
 
 
 ## Test
@@ -40,11 +39,15 @@ python qrel/modules/relate.py test_many
 
 ## API
 
+#### Initialization
+
 To use the system as an api-service, first run the following command:
 
 ```
 python qrel/api.py
 ```
+
+#### Retrieve related questions
 
 A local service is now initiated, that will respond to relatedness requests like the following (in the command line):
 
@@ -53,10 +56,21 @@ curl -i -X GET -H "Content-Type: application/json" -d '{"text":"nintendo switch 
 ```
 
 The service will return json-formatted output, with the following fields:
-* "questiontext"	: the text of the search question
-* "qid"			: the id of the search question
-* "related"		: a selection of 5 related questions, as a list of lists with 1) the id of the related question 2) the text of the related question 3) the similarity score 4) the topic to which this question most relates
-* "candidates"	: list of question ids that were found as possibly related candidates - could be used to update their relatedness information
+* **"questiontext"**	: the text of the search question
+* **"qid"**				: the id of the search question
+* **"related"**			: a selection of 5 related questions, as a list of lists with 1) the id of the related question 2) the text of the related question 3) the similarity score 4) the topic to which this question most relates
+
+#### Update dataset
+
+By calling the API to retrieve the related questions for a new question, this question is added to the dataset. In order to update the dataset such that new questions might end up in the related questions overview of earlier questions, the API can be called as follows:
+
+'''
+curl -i -X GET http://localhost:5000/update
+'''
+
+This call only returns information on the success. The question relatedness procedure was performanced for all candidate questions that were found possibly related to the new questions. 
+
+#### Retrieve similar questions
 
 The API could also be ran to retrieve the most similar questions to a given question:
 
@@ -66,7 +80,8 @@ curl -i -X GET -H "Content-Type: application/json" -d '{"text":"nintendo switch 
 
 The service will return json-formatted output, with the following fields:
 * **"questiontext"**	: the text of the search question
-* **"similar"**		: the 5 most similar questions, as a list of lists with 1) the id of the similar question 2) the text of the similar question 3) the similarity score 4) an assessment if it is completely similar ('0' for similar, '0' for not similar); this only applies to the ensemble model, any of the other models (bm25, trlm, softcosine) always return '0'
+* **"similar"**		: the 5 most similar questions, as a list of lists with 1) the id of the similar question 2) the text of the similar question 3) the similarity score 4) an assessment if it is completely similar ('1' for similar, '0' for not similar); this only applies to the ensemble model, any of the other models (bm25, trlm, softcosine) always return '0'
+
 
 ## Adding many questions
 
@@ -84,12 +99,7 @@ The other fields they could optionally include are:
 * **"tokens"**	: the word tokens of the question text
 * **"lemmas"**	: normalized versions of these word tokens
 * **"pos"**		: the grammatical categories of these word tokens
-* **"topics"**	: the words and phrases that in the question that reflect topics
+* **"topics"**	: the words and phrases in the question that reflect topics
 * **"related"**	: the id's and texts of the questions that are selected as related
 
-The questions in this file will be added to the original questions and saved. If the optional fields are not included, the system will extract them. 
-
-## Updating dataset
-
-
-
+The questions in this file will be added to the original questions and saved. If the optional fields are not included, the system will extract them. Running this command will take a while.

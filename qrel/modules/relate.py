@@ -300,13 +300,13 @@ class Relate:
         Function to test question similarity and relatedness procedure for a new file with many questions
         """
         many_questions_test = []
-        for qobj in self.questions[-10:]: # select held-out questions and remove preprocessing and topic information
+        for qobj in self.questions[-100:]: # select held-out questions and remove preprocessing and topic information
             qobj.tokens = False
             qobj.lemmas = False
             qobj.pos = False
             qobj.topics = False
             many_questions_test.append(qobj)  
-        self.questions = self.questions[:-10] # strip held-out questions from original questions
+        self.questions = self.questions[:-100] # strip held-out questions from original questions
         # reinitialize models
         self.init_qsim()
         self.init_qrel()
