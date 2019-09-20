@@ -68,7 +68,7 @@ By calling the API to retrieve the related questions for a new question, this qu
 curl -i -X GET http://localhost:5000/update
 '''
 
-This call only returns information on the success. The question relatedness procedure was performanced for all candidate questions that were found possibly related to the new questions. 
+This call only returns information on the success. The question relatedness procedure was performed for all candidate questions that were found possibly related to the new questions. 
 
 #### Retrieve similar questions
 
