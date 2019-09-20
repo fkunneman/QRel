@@ -5,7 +5,7 @@ This repository features code that was created as part of the NWO project DiscoS
 
 Check the paper below for more information on methodology and performance:
 
-Kunneman, F., Castro Ferreira, T., Krahmer, E. & Van den Bosch, A. (2019), Question Similarity in Community Question Answering: A Systematic Exploration of Preprocessing Methods and Models, In Proceedings of the International Conference Recent Advances in Natural Language Processing (pp. ...)
+Kunneman, F., Castro Ferreira, T., Krahmer, E. & Van den Bosch, A. (2019), Question Similarity in Community Question Answering: A Systematic Exploration of Preprocessing Methods and Models, In Proceedings of the International Conference Recent Advances in Natural Language Processing (pp. 593-601)
 
 For other questions, please contact us via f.kunneman@gmail.com or thiago.castro.ferreira@gmail.com
 
